@@ -519,6 +519,144 @@ canvas.chart{width:100%!important;height:120px!important;border-radius:8px;}
   border:1px solid var(--border);
 }
 .notif-ico{font-size:18px;flex-shrink:0;}
+
+/* ─── LIVE NOTIFICATION HUD ─── */
+/* Slides down from top, always on top, mimics system notification */
+#liveHud{
+  position:fixed;top:0;left:0;right:0;z-index:9800;
+  transform:translateY(-110%);
+  transition:transform 0.45s cubic-bezier(0.34,1.3,0.64,1);
+  padding:0 10px;
+  pointer-events:none;
+}
+#liveHud.visible{transform:translateY(0);pointer-events:all;}
+.hud-inner{
+  background:rgba(10,18,32,0.97);
+  border:1px solid rgba(245,166,35,0.25);
+  border-top:none;
+  border-radius:0 0 20px 20px;
+  padding:12px 16px 14px;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 8px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(245,166,35,0.1);
+}
+[data-theme="light"] .hud-inner{
+  background:rgba(255,255,255,0.97);
+  border-color:rgba(245,166,35,0.3);
+  box-shadow:0 8px 40px rgba(0,0,0,0.15);
+}
+.hud-top{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;
+}
+.hud-app{
+  display:flex;align-items:center;gap:7px;
+  font-size:9px;letter-spacing:2px;color:var(--muted2);
+}
+.hud-app-icon{
+  width:20px;height:20px;border-radius:5px;
+  background:linear-gradient(135deg,#f5a623,#00d4ff);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;
+}
+.hud-time{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.hud-close{
+  width:24px;height:24px;border-radius:99px;
+  background:var(--surface2);border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:12px;color:var(--muted2);
+  flex-shrink:0;
+}
+.hud-body{display:flex;align-items:center;gap:14px;}
+.hud-run-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(245,166,35,0.15),rgba(0,212,255,0.1));
+  border:1px solid rgba(245,166,35,0.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.hud-stats{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.hud-stat{text-align:center;}
+.hud-val{
+  font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  background:linear-gradient(135deg,#f5a623,#00d4ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1;
+}
+[data-theme="light"] .hud-val{
+  background:linear-gradient(135deg,#d4860a,#0090cc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hud-lbl{font-size:7px;letter-spacing:2px;color:var(--muted);margin-top:1px;}
+.hud-divider{width:1px;background:var(--border);height:36px;align-self:center;}
+.hud-actions{
+  display:flex;gap:8px;margin-top:10px;
+}
+.hud-btn{
+  flex:1;padding:8px;border:none;border-radius:10px;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;
+  letter-spacing:1px;cursor:pointer;
+  transition:transform 0.1s,opacity 0.1s;
+}
+.hud-btn:active{transform:scale(0.96);opacity:0.85;}
+.hud-btn.pause{
+  background:rgba(245,166,35,0.15);
+  border:1px solid rgba(245,166,35,0.3);
+  color:#f5a623;
+}
+.hud-btn.stop{
+  background:rgba(239,68,68,0.12);
+  border:1px solid rgba(239,68,68,0.25);
+  color:#ef4444;
+}
+.hud-btn.resume{
+  background:rgba(34,197,94,0.12);
+  border:1px solid rgba(34,197,94,0.25);
+  color:#22c55e;
+}
+/* Pulse ring on HUD while running */
+.hud-run-icon.pulsing{animation:hudPulse 1.5s ease infinite;}
+@keyframes hudPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,0.4);}
+  50%{box-shadow:0 0 0 8px rgba(245,166,35,0);}
+}
+/* Mini HUD tab — stays visible at top when HUD is hidden, tap to expand */
+#hudTab{
+  position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-100%);
+  z-index:9700;
+  background:linear-gradient(135deg,#f5a623,#00d4ff);
+  border-radius:0 0 12px 12px;
+  padding:4px 20px 6px;
+  display:flex;align-items:center;gap:8px;
+  cursor:pointer;
+  transition:transform 0.4s cubic-bezier(0.34,1.3,0.64,1);
+  box-shadow:0 4px 16px rgba(245,166,35,0.4);
+}
+#hudTab.visible{transform:translateX(-50%) translateY(0);}
+.hudtab-val{
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  color:#08111f;letter-spacing:1px;
+}
+.hudtab-dot{
+  width:5px;height:5px;border-radius:50%;background:#08111f;
+  animation:blink 1s infinite;
+}
+
+/* Notification permission banner */
+#notifPermBanner{
+  background:rgba(245,166,35,0.08);
+  border:1px solid rgba(245,166,35,0.2);
+  border-radius:12px;padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+  font-size:10px;letter-spacing:1px;color:var(--muted2);
+}
+#notifPermBanner button{
+  margin-left:auto;padding:6px 14px;
+  background:var(--amber);border:none;border-radius:8px;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+  color:#0d0900;cursor:pointer;white-space:nowrap;
+  letter-spacing:1px;
+}
 </style>
 </head>
 <body>
@@ -602,6 +740,60 @@ canvas.chart{width:100%!important;height:120px!important;border-radius:8px;}
 <!-- ════ TOAST ════ -->
 <div class="toast" id="toast"></div>
 
+<!-- ════ LIVE RUN HUD (notification-bar style) ════ -->
+<div id="liveHud">
+  <div class="hud-inner">
+    <div class="hud-top">
+      <div class="hud-app">
+        <div class="hud-app-icon">🏃</div>
+        RUNTRACKER PRO · LIVE RUN
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="hud-time" id="hudTime">00:00:00</span>
+        <button class="hud-close" onclick="hideHud()" title="Minimize">▲</button>
+      </div>
+    </div>
+    <div class="hud-body">
+      <div class="hud-run-icon pulsing" id="hudIcon">🏃</div>
+      <div class="hud-stats">
+        <div class="hud-stat">
+          <div class="hud-val" id="hudKm">0.00</div>
+          <div class="hud-lbl">KM</div>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-stat">
+          <div class="hud-val" id="hudPace">--:--</div>
+          <div class="hud-lbl">PACE</div>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-stat">
+          <div class="hud-val" id="hudSteps">0</div>
+          <div class="hud-lbl">STEPS</div>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-stat">
+          <div class="hud-val" id="hudCal">0</div>
+          <div class="hud-lbl">KCAL</div>
+        </div>
+      </div>
+    </div>
+    <div class="hud-actions">
+      <button class="hud-btn pause" id="hudPauseBtn" onclick="hudTogglePause()">⏸ PAUSE</button>
+      <button class="hud-btn stop" onclick="hudStop()">⏹ FINISH</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mini pull-tab shown when HUD is minimized but run is active -->
+<div id="hudTab" onclick="showHud()">
+  <div class="hudtab-dot"></div>
+  <span class="hudtab-val" id="hudTabKm">0.00 km</span>
+  <span class="hudtab-val">·</span>
+  <span class="hudtab-val" id="hudTabTime">00:00</span>
+  <span class="hudtab-val">·</span>
+  <span class="hudtab-val" id="hudTabPace">--:-- /km</span>
+</div>
+
 <!-- ════════════════════════════════════════
      MAIN APP
 ════════════════════════════════════════ -->
@@ -609,7 +801,7 @@ canvas.chart{width:100%!important;height:120px!important;border-radius:8px;}
 
   <!-- TOP BAR -->
   <div class="topbar">
-    <div class="topbar-logo">RUNTRACKER</div>
+    <div class="topbar-logo">RUNTRACKER PRO</div>
     <div class="topbar-right">
       <div class="live-badge">
         <div class="live-dot" id="liveDot"></div>
@@ -698,6 +890,13 @@ canvas.chart{width:100%!important;height:120px!important;border-radius:8px;}
 
   <!-- ── RUN PAGE ── -->
   <div class="page" id="page-run">
+    <!-- Notification permission request -->
+    <div id="notifPermBanner" style="display:none;">
+      <span>🔔</span>
+      <span>Enable system notifications to see live run stats in your notification bar</span>
+      <button onclick="requestNotifPerm()">ENABLE</button>
+    </div>
+
     <!-- GPS Status -->
     <div class="gps-bar" id="gpsBar">
       <span class="gps-icon">📡</span>
@@ -866,6 +1065,14 @@ canvas.chart{width:100%!important;height:120px!important;border-radius:8px;}
       <span class="sarrow" id="themeIcon">🌙</span>
     </div>
 
+    <div class="srow" onclick="requestNotifPerm()">
+      <div class="srow-info">
+        <div class="slbl">Live Notification Bar</div>
+        <div class="ssub" id="notifStatusSub">Tap to enable system notifications</div>
+      </div>
+      <span class="sarrow" id="notifStatusIcon">🔔</span>
+    </div>
+
     <div class="srow" onclick="openModal('manualModal')">
       <div class="srow-info">
         <div class="slbl">Manual Activity Entry</div>
@@ -980,12 +1187,18 @@ function toggleRun(){
     timerIv=setInterval(tick,50);
     laps=[];lastLapT=0;lastKmAnnounced=0;
     updateRunUI();showToast('Run started! 🏃');
+    // Show HUD
+    showHud();
+    startNotifUpdates();
   } else if(running){
     // PAUSE
     clearInterval(timerIv);elapsed=Date.now()-startTime;
     paused=true;running=false;
     stopGPS();
     updateRunUI();showToast('Paused');
+    updateHud(elapsed);
+    stopNotifUpdates();
+    sendSystemNotif(); // show paused state
   } else if(paused){
     // RESUME
     startTime=Date.now()-elapsed;
@@ -993,6 +1206,7 @@ function toggleRun(){
     startGPS();
     timerIv=setInterval(tick,50);
     updateRunUI();showToast('Resumed!');
+    startNotifUpdates();
   }
 }
 
@@ -1001,6 +1215,9 @@ function stopRun(){
   clearInterval(timerIv);
   const ms=running?(Date.now()-startTime):elapsed;
   stopGPS(); stopPedometer();
+  // Clear HUD and notifications
+  clearHud();
+  stopNotifUpdates();
 
   if(ms<4000&&currentKm<0.01){
     resetRunState();updateRunUI();showToast('Run discarded');return;
@@ -1052,6 +1269,8 @@ function tick(){
     lastKmAnnounced=kmFloor;
     speak(kmFloor+' kilometre'+(kmFloor>1?'s':'')+' completed. Keep going!');
   }
+  // Update HUD
+  hudTick(ms);
 }
 
 function updateRunUI(){
@@ -1559,6 +1778,235 @@ function goTab(name){
   if(name==='dash')refreshDash();
   if(name==='history')refreshHistory();
   if(name==='goals')refreshGoals();
+  if(name==='run')checkNotifBanner();
+}
+
+/* ════════════════════════════════════════════
+   LIVE HUD + SYSTEM NOTIFICATION BAR
+   Works like Strava/Nike Run Club:
+   - In-app: slides down from top with live stats + controls
+   - System: persistent notification updates every 5s with stats
+   - Mini pull-tab stays visible when HUD is dismissed
+════════════════════════════════════════════ */
+let hudVisible=false;
+let hudMinimized=false;
+let notifIv=null;
+let swReg=null;
+
+/* ── Register inline Service Worker (for background notification updates) ── */
+function registerSW(){
+  if(!('serviceWorker' in navigator))return;
+  const swCode=`
+self.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='UPDATE_NOTIF'){
+    const d=e.data;
+    self.registration.showNotification('🏃 RunTracker Pro — Running',{
+      body:'📍 '+d.km+' km  ·  ⏱ '+d.time+'  ·  👟 '+d.pace+' /km\\n👣 '+d.steps+' steps  ·  🔥 '+d.cal+' kcal',
+      tag:'live-run',
+      renotify:false,
+      silent:true,
+      requireInteraction:true,
+      icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="%23f5a623"/><text y="44" x="32" text-anchor="middle" font-size="36">🏃</text></svg>',
+      badge:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="%23f5a623"/></svg>',
+      actions:[
+        {action:'pause',title:'⏸ Pause'},
+        {action:'stop',title:'⏹ Stop'}
+      ]
+    });
+  }
+  if(e.data&&e.data.type==='CLEAR_NOTIF'){
+    self.registration.getNotifications({tag:'live-run'}).then(ns=>ns.forEach(n=>n.close()));
+  }
+});
+self.addEventListener('notificationclick',e=>{
+  e.notification.close();
+  if(e.action==='pause'){
+    self.clients.matchAll().then(cs=>cs.forEach(c=>c.postMessage({type:'HUD_PAUSE'})));
+  } else if(e.action==='stop'){
+    self.clients.matchAll().then(cs=>cs.forEach(c=>c.postMessage({type:'HUD_STOP'})));
+  } else {
+    self.clients.matchAll().then(cs=>{
+      if(cs.length)cs[0].focus();
+      else self.clients.openWindow('/');
+    });
+  }
+});
+`;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const url=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url,{scope:'/'}).then(reg=>{
+    swReg=reg;
+    // Listen for messages from SW (pause/stop from notification actions)
+    navigator.serviceWorker.addEventListener('message',e=>{
+      if(e.data.type==='HUD_PAUSE')hudTogglePause();
+      if(e.data.type==='HUD_STOP')hudStop();
+    });
+  }).catch(()=>{});
+}
+
+function requestNotifPerm(){
+  if(!('Notification' in window)){showToast('Notifications not supported on this browser');return;}
+  if(Notification.permission==='granted'){
+    showToast('Notifications already enabled ✓');
+    updateNotifSettingsUI();
+    return;
+  }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){
+      document.getElementById('notifPermBanner').style.display='none';
+      updateNotifSettingsUI();
+      showToast('System notifications enabled! 🔔');
+      if(running)startNotifUpdates();
+    } else {
+      showToast('Permission denied — using in-app HUD only');
+    }
+  });
+}
+
+function updateNotifSettingsUI(){
+  const granted='Notification' in window&&Notification.permission==='granted';
+  const sub=document.getElementById('notifStatusSub');
+  const ico=document.getElementById('notifStatusIcon');
+  if(sub)sub.textContent=granted?'Active — shows km, pace, steps, calories':'Tap to enable system notifications';
+  if(ico)ico.textContent=granted?'✅':'🔔';
+}
+
+function checkNotifBanner(){
+  if('Notification' in window&&Notification.permission==='default'){
+    document.getElementById('notifPermBanner').style.display='flex';
+  } else {
+    document.getElementById('notifPermBanner').style.display='none';
+  }
+  updateNotifSettingsUI();
+}
+
+/* ── Show / hide HUD ── */
+function showHud(){
+  document.getElementById('liveHud').classList.add('visible');
+  document.getElementById('hudTab').classList.remove('visible');
+  hudVisible=true;hudMinimized=false;
+}
+function hideHud(){
+  document.getElementById('liveHud').classList.remove('visible');
+  // Show mini tab only if run is active
+  if(running||paused){
+    document.getElementById('hudTab').classList.add('visible');
+  }
+  hudVisible=false;hudMinimized=true;
+}
+function clearHud(){
+  document.getElementById('liveHud').classList.remove('visible');
+  document.getElementById('hudTab').classList.remove('visible');
+  hudVisible=false;hudMinimized=false;
+}
+
+/* ── Update all HUD values ── */
+function updateHud(ms){
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
+  const timeStr=pad(h)+':'+pad(m)+':'+pad(s);
+  const shortTime=h>0?pad(h)+':'+pad(m)+':'+pad(s):pad(m)+':'+pad(s);
+
+  let paceStr='--:--';
+  if(currentKm>0&&ms>0){
+    const pm=Math.floor(ms/currentKm/60000),ps=Math.floor((ms/currentKm%60000)/1000);
+    paceStr=pm+':'+pad(ps);
+  }
+  const cal=calcCal(currentKm,currentSteps);
+
+  // Full HUD
+  setEl('hudTime',timeStr);
+  setEl('hudKm',currentKm.toFixed(2));
+  setEl('hudPace',paceStr);
+  setEl('hudSteps',currentSteps>=1000?(currentSteps/1000).toFixed(1)+'k':String(currentSteps));
+  setEl('hudCal',String(cal));
+
+  // Mini tab
+  setEl('hudTabKm',currentKm.toFixed(2)+' km');
+  setEl('hudTabTime',shortTime);
+  setEl('hudTabPace',paceStr+' /km');
+
+  // Pause btn label
+  const pb=document.getElementById('hudPauseBtn');
+  if(pb){
+    if(paused){pb.textContent='▶ RESUME';pb.className='hud-btn resume';}
+    else{pb.textContent='⏸ PAUSE';pb.className='hud-btn pause';}
+  }
+  // Pulsing icon
+  const ic=document.getElementById('hudIcon');
+  if(ic)ic.className='hud-run-icon'+(running?' pulsing':'');
+}
+
+/* ── System notification update (every 5s) ── */
+function startNotifUpdates(){
+  stopNotifUpdates();
+  sendSystemNotif(); // immediate first one
+  notifIv=setInterval(sendSystemNotif,5000);
+}
+function stopNotifUpdates(){
+  clearInterval(notifIv);notifIv=null;
+  clearSystemNotif();
+}
+
+function sendSystemNotif(){
+  if(!running&&!paused)return;
+  const ms=running?(Date.now()-startTime):elapsed;
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
+  const timeStr=pad(h)+':'+pad(m)+':'+pad(s);
+  let paceStr='--:--';
+  if(currentKm>0&&ms>0){
+    const pm=Math.floor(ms/currentKm/60000),ps=Math.floor((ms/currentKm%60000)/1000);
+    paceStr=pm+':'+pad(ps);
+  }
+  const cal=calcCal(currentKm,currentSteps);
+
+  // Try via Service Worker (better — supports actions)
+  if(swReg&&swReg.active&&Notification.permission==='granted'){
+    swReg.active.postMessage({
+      type:'UPDATE_NOTIF',
+      km:currentKm.toFixed(2),
+      time:timeStr,
+      pace:paceStr,
+      steps:currentSteps.toLocaleString(),
+      cal:String(cal)
+    });
+    return;
+  }
+  // Fallback: direct Notification API
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{
+      new Notification('🏃 RunTracker Pro — Running',{
+        body:'📍 '+currentKm.toFixed(2)+' km  ·  ⏱ '+timeStr+'\n👟 '+paceStr+' /km  ·  🔥 '+cal+' kcal',
+        tag:'live-run',
+        renotify:false,
+        silent:true,
+        requireInteraction:true
+      });
+    }catch(e){}
+  }
+}
+
+function clearSystemNotif(){
+  if(swReg&&swReg.active){
+    swReg.active.postMessage({type:'CLEAR_NOTIF'});
+    return;
+  }
+}
+
+/* ── HUD controls (mirror main controls) ── */
+function hudTogglePause(){
+  // Switch to run tab so user sees the timer
+  goTab('run');
+  toggleRun();
+  updateHud(elapsed);
+}
+function hudStop(){
+  goTab('run');
+  stopRun();
+}
+
+/* ── Called from tick() to refresh HUD ── */
+function hudTick(ms){
+  if(running||paused) updateHud(ms);
 }
 
 /* ════════════════════════════════════════════
@@ -1646,6 +2094,11 @@ window.addEventListener('load',async()=>{
     Notification.requestPermission();
   }
 
+  // Register service worker for background notifications
+  registerSW();
+  // Check if we need to show the permission banner
+  setTimeout(checkNotifBanner,100);
+
   // Load data
   await refreshDash();
 
@@ -1662,6 +2115,18 @@ window.addEventListener('popstate',()=>history.pushState(null,''));
 
 // Resize redraws charts
 window.addEventListener('resize',()=>{if(document.getElementById('page-dash').classList.contains('on'))refreshDash();});
+
+// Page Visibility: when user leaves the app, show mini-tab + fire system notif immediately
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden&&(running||paused)){
+    // App went to background — ensure system notification is live
+    sendSystemNotif();
+    // Show mini-tab for when they return
+    if(!hudVisible){
+      document.getElementById('hudTab').classList.add('visible');
+    }
+  }
+});
 </script>
 </body>
 </html>
