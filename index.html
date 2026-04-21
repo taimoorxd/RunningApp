@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#08111f"/>
+<title>RunTracker Pro</title>
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN SYSTEM — Tactical / HUD aesthetic
+   Dark-first. Neon amber + electric cyan.
+   Font: Rajdhani (display) + JetBrains Mono
+═══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg:        #08111f;
+  --bg2:       #0d1a2e;
+  --surface:   #101f35;
+  --surface2:  #162540;
+  --card:      #0f1d32;
+  --border:    rgba(255,255,255,0.07);
+  --amber:     #f5a623;
+  --amber2:    #ffcc44;
+  --cyan:      #00d4ff;
+  --cyan2:     #00f5e0;
+  --green:     #22c55e;
+  --danger:    #ef4444;
+  --purple:    #a78bfa;
+  --text:      #e2eaf5;
+  --muted:     #4d6080;
+  --muted2:    #7a93b3;
+  --shadow:    0 8px 32px rgba(0,0,0,0.5);
+  --glow-a:    0 0 24px rgba(245,166,35,0.35);
+  --glow-c:    0 0 24px rgba(0,212,255,0.35);
+  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+  --radius:    14px;
+}
+[data-theme="light"] {
+  --bg:        #f0f4f8;
+  --bg2:       #e4ecf4;
+  --surface:   #ffffff;
+  --surface2:  #eaf0f8;
+  --card:      #ffffff;
+  --border:    rgba(0,0,0,0.08);
+  --text:      #1a2840;
+  --muted:     #7a93b3;
+  --muted2:    #4d6080;
+  --shadow:    0 4px 20px rgba(0,0,0,0.1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:'JetBrains Mono',monospace;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;flex-direction:column;
+  transition:background var(--transition),color var(--transition);
+}
+
+/* ─── SCROLLBARS ─── */
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:99px;}
+
+/* ─── SPLASH ─── */
+#splash{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:9999;
+  transition:opacity 0.8s ease,visibility 0.8s ease;
+}
+#splash.gone{opacity:0;visibility:hidden;pointer-events:none;}
+.splash-hex{
+  width:100px;height:100px;
+  position:relative;margin-bottom:28px;
+}
+.splash-hex svg{width:100%;height:100%;animation:rotatePulse 2s ease-in-out infinite;}
+@keyframes rotatePulse{
+  0%,100%{transform:rotate(0deg) scale(1);}
+  50%{transform:rotate(180deg) scale(1.08);}
+}
+.splash-inner{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+  animation:rotatePulse 2s ease-in-out infinite reverse;
+}
+.splash-name{
+  font-family:'Rajdhani',sans-serif;
+  font-size:46px;font-weight:700;letter-spacing:8px;
+  background:linear-gradient(135deg,var(--amber),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.splash-tag{
+  font-size:10px;letter-spacing:4px;color:var(--muted2);margin-top:6px;
+  text-transform:uppercase;
+}
+.splash-track{
+  width:200px;height:3px;background:var(--surface2);
+  border-radius:99px;margin-top:36px;overflow:hidden;
+}
+.splash-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--amber),var(--cyan));
+  border-radius:99px;
+  animation:trackFill 2.4s ease forwards;
+}
+@keyframes trackFill{from{width:0%}to{width:100%}}
+
+/* ─── APP SHELL ─── */
+#app{display:none;flex-direction:column;height:100%;height:100dvh;}
+#app.on{display:flex;}
+
+/* ─── TOP BAR ─── */
+.topbar{
+  padding:14px 18px 10px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+  flex-shrink:0;
+}
+.topbar-logo{
+  font-family:'Rajdhani',sans-serif;
+  font-size:22px;font-weight:700;letter-spacing:4px;
+  background:linear-gradient(135deg,var(--amber),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.icon-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;
+  transition:background var(--transition),transform 0.1s;
+}
+.icon-btn:active{transform:scale(0.9);}
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:99px;padding:4px 10px;
+  font-size:9px;letter-spacing:2px;color:var(--muted2);
+}
+.live-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--muted);
+  transition:background 0.3s,box-shadow 0.3s;
+}
+.live-dot.on{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* ─── NAV TABS ─── */
+.nav{
+  display:flex;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;overflow-x:auto;
+}
+.nav::-webkit-scrollbar{display:none;}
+.nav-tab{
+  flex:1;min-width:60px;padding:10px 6px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:8px;letter-spacing:1.5px;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;
+  transition:color var(--transition),border-color var(--transition);
+  white-space:nowrap;
+}
+.nav-tab .ni{font-size:17px;}
+.nav-tab.on{color:var(--amber);border-bottom-color:var(--amber);}
+
+/* ─── PAGES ─── */
+.page{display:none;flex:1;overflow-y:auto;padding:16px;gap:14px;flex-direction:column;}
+.page.on{display:flex;animation:fadeUp 0.3s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── CARDS ─── */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  border:1px solid var(--border);padding:16px;
+  box-shadow:var(--shadow);
+}
+.clabel{
+  font-size:8px;letter-spacing:2.5px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:8px;
+}
+
+/* ─── TIMER ─── */
+.timer-wrap{text-align:center;padding:8px 0 4px;}
+.timer-big{
+  font-family:'Rajdhani',sans-serif;
+  font-size:68px;font-weight:700;letter-spacing:2px;
+  line-height:1;color:var(--text);
+  text-shadow:0 0 40px rgba(0,212,255,0.15);
+  transition:color var(--transition);
+}
+.timer-big.active{
+  background:linear-gradient(135deg,var(--amber),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.timer-ms{
+  font-size:20px;color:var(--muted2);letter-spacing:1px;margin-top:2px;
+}
+
+/* ─── METRICS GRID ─── */
+.metrics4{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mcard{
+  background:var(--card);border-radius:12px;
+  border:1px solid var(--border);
+  padding:13px 14px;text-align:center;
+  position:relative;overflow:hidden;
+}
+.mcard::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0;
+}
+.mcard.c1::after{background:linear-gradient(90deg,var(--amber),var(--amber2));}
+.mcard.c2::after{background:linear-gradient(90deg,var(--cyan),var(--cyan2));}
+.mcard.c3::after{background:linear-gradient(90deg,#f97316,#ef4444);}
+.mcard.c4::after{background:linear-gradient(90deg,var(--purple),#ec4899);}
+.mval{
+  font-family:'Rajdhani',sans-serif;
+  font-size:34px;font-weight:700;
+  color:var(--text);line-height:1;
+}
+.munit{font-size:8px;letter-spacing:2px;color:var(--muted);margin-top:3px;}
+
+/* ─── BUTTONS ─── */
+.btn-row{display:flex;gap:10px;align-items:stretch;}
+.btn-main{
+  flex:1;padding:16px;
+  background:linear-gradient(135deg,var(--amber),var(--amber2));
+  color:#0d0900;border:none;border-radius:var(--radius);
+  font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;
+  cursor:pointer;
+  box-shadow:0 4px 20px rgba(245,166,35,0.4);
+  transition:transform 0.1s,box-shadow 0.2s,background 0.2s;
+}
+.btn-main:active{transform:scale(0.97);}
+.btn-main.stop{
+  background:linear-gradient(135deg,#ef4444,#b91c1c);
+  box-shadow:0 4px 20px rgba(239,68,68,0.4);
+  color:white;
+}
+.btn-main.pause{
+  background:linear-gradient(135deg,var(--cyan),var(--cyan2));
+  box-shadow:0 4px 20px rgba(0,212,255,0.3);
+  color:#001820;
+}
+.btn-sq{
+  width:52px;height:52px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;font-size:20px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+  transition:background var(--transition),transform 0.1s;
+}
+.btn-sq:active{transform:scale(0.92);background:var(--surface2);}
+
+/* ─── GPS STATUS ─── */
+.gps-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  background:var(--surface);border-radius:10px;
+  border:1px solid var(--border);font-size:10px;letter-spacing:1.5px;
+}
+.gps-icon{font-size:16px;}
+.gps-txt{color:var(--muted2);flex:1;}
+.gps-acc{color:var(--amber);font-size:9px;}
+
+/* ─── GOAL RING ─── */
+.goal-ring-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding:10px 0;
+}
+.ring-svg{width:140px;height:140px;}
+.ring-bg{fill:none;stroke:var(--surface2);stroke-width:10;}
+.ring-fill{
+  fill:none;stroke-width:10;stroke-linecap:round;
+  stroke:url(#ringGrad);
+  transition:stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1);
+  transform:rotate(-90deg);transform-origin:center;
+}
+.ring-text-top{
+  font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;
+  fill:var(--text);text-anchor:middle;dominant-baseline:middle;
+}
+.ring-text-bot{font-size:8px;fill:var(--muted);text-anchor:middle;dominant-baseline:middle;letter-spacing:2px;}
+
+/* ─── PROGRESS BAR ─── */
+.pbar-wrap{background:var(--surface2);border-radius:99px;height:6px;overflow:hidden;margin:4px 0;}
+.pbar-fill{
+  height:100%;border-radius:99px;
+  background:linear-gradient(90deg,var(--amber),var(--cyan));
+  transition:width 0.6s ease;min-width:0%;
+}
+.pbar-fill.green{background:linear-gradient(90deg,var(--green),var(--cyan2));}
+
+/* ─── STAT ROW ─── */
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;}
+.stat-row+.stat-row{border-top:1px solid var(--border);}
+.stat-lbl{font-size:10px;letter-spacing:1.5px;color:var(--muted2);}
+.stat-val{font-size:13px;font-weight:600;color:var(--text);}
+.stat-val.hi{
+  background:linear-gradient(135deg,var(--amber),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+/* ─── HISTORY LIST ─── */
+.run-item{
+  background:var(--card);border-radius:12px;
+  border:1px solid var(--border);
+  padding:13px 14px;
+  display:flex;align-items:center;gap:12px;
+  animation:slideIn 0.3s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.run-icon{
+  width:40px;height:40px;border-radius:10px;
+  background:rgba(245,166,35,0.1);
+  border:1px solid rgba(245,166,35,0.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.run-info{flex:1;}
+.run-date{font-size:9px;letter-spacing:1.5px;color:var(--muted2);margin-bottom:3px;}
+.run-stats{display:flex;gap:10px;flex-wrap:wrap;}
+.run-pill{
+  font-size:10px;color:var(--text);
+  background:var(--surface2);border-radius:99px;
+  padding:2px 8px;border:1px solid var(--border);
+}
+.run-pill.manual{border-color:rgba(167,139,250,0.3);color:var(--purple);}
+
+/* ─── EMPTY STATE ─── */
+.empty{
+  text-align:center;padding:40px 20px;
+  color:var(--muted);font-size:11px;line-height:2;
+  letter-spacing:1px;
+}
+.empty-ico{font-size:44px;display:block;margin-bottom:14px;opacity:0.4;}
+
+/* ─── CHARTS ─── */
+.chart-wrap{position:relative;width:100%;height:120px;}
+canvas.chart{width:100%!important;height:120px!important;border-radius:8px;}
+
+/* ─── INPUT ─── */
+.field{
+  width:100%;padding:12px 14px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  outline:none;transition:border-color var(--transition),box-shadow var(--transition);
+  -webkit-appearance:none;
+}
+.field:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,166,35,0.1);}
+.field::placeholder{color:var(--muted);}
+.field-row{display:flex;gap:8px;align-items:center;}
+.field-lbl{font-size:9px;letter-spacing:2px;color:var(--muted2);margin-bottom:5px;display:block;}
+
+/* ─── GOAL SETTING ─── */
+.goal-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+.chip{
+  padding:6px 14px;border-radius:99px;
+  border:1px solid var(--border);background:var(--surface2);
+  font-size:10px;letter-spacing:1px;color:var(--muted2);
+  cursor:pointer;transition:all var(--transition);
+}
+.chip.on{
+  border-color:var(--amber);
+  background:rgba(245,166,35,0.12);
+  color:var(--amber);
+}
+
+/* ─── SETTINGS ROWS ─── */
+.srow{
+  background:var(--card);border-radius:12px;
+  border:1px solid var(--border);
+  padding:13px 15px;
+  display:flex;justify-content:space-between;align-items:center;
+  cursor:pointer;transition:background var(--transition);
+}
+.srow:active{background:var(--surface2);}
+.srow-info .slbl{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.srow-info .ssub{font-size:9px;letter-spacing:1px;color:var(--muted);}
+.srow.danger .slbl{color:var(--danger);}
+.sarrow{font-size:16px;color:var(--muted);}
+
+/* ─── TOGGLE ─── */
+.toggle-wrap{display:flex;align-items:center;gap:10px;}
+.toggle{
+  width:44px;height:24px;border-radius:99px;
+  background:var(--surface2);border:1px solid var(--border);
+  position:relative;cursor:pointer;transition:background var(--transition);
+  flex-shrink:0;
+}
+.toggle.on{background:var(--amber);border-color:var(--amber);}
+.toggle::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:18px;height:18px;border-radius:50%;background:white;
+  transition:transform var(--transition);box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle.on::after{transform:translateX(20px);}
+.toggle-lbl{font-size:10px;letter-spacing:1px;color:var(--muted2);}
+
+/* ─── MODAL ─── */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);
+  z-index:8000;display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;visibility:hidden;transition:all 0.25s;
+}
+.overlay.on{opacity:1;visibility:visible;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:26px;max-width:340px;width:100%;
+  transform:scale(0.92);transition:transform 0.25s;text-align:center;
+}
+.overlay.on .modal{transform:scale(1);}
+.modal-ico{font-size:48px;margin-bottom:12px;}
+.modal-title{
+  font-family:'Rajdhani',sans-serif;
+  font-size:24px;font-weight:700;letter-spacing:2px;margin-bottom:8px;
+  color:var(--danger);
+}
+.modal-body{font-size:11px;color:var(--muted2);line-height:1.8;margin-bottom:22px;}
+.modal-btns{display:flex;gap:10px;}
+.mbtn{
+  flex:1;padding:13px;border:none;border-radius:11px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;
+  cursor:pointer;letter-spacing:1px;
+}
+.mbtn.cancel{background:var(--surface2);color:var(--text);}
+.mbtn.confirm{background:var(--danger);color:white;box-shadow:0 4px 16px rgba(239,68,68,0.3);}
+
+/* ─── TOAST ─── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:99px;padding:10px 22px;
+  font-size:10px;letter-spacing:1.5px;color:var(--text);
+  z-index:9500;
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  white-space:nowrap;box-shadow:var(--shadow);
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ─── MILESTONE BANNER ─── */
+.milestone{
+  position:fixed;top:0;left:0;right:0;
+  background:linear-gradient(135deg,var(--amber),var(--cyan));
+  color:#08111f;padding:14px 20px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:2px;
+  text-align:center;z-index:9400;
+  transform:translateY(-100%);
+  transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+.milestone.show{transform:translateY(0);}
+
+/* ─── MANUAL ENTRY FORM ─── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ─── PRIVACY BOX ─── */
+.privacy{
+  background:rgba(0,212,255,0.04);
+  border:1px solid rgba(0,212,255,0.12);
+  border-radius:12px;padding:14px;
+  font-size:9px;line-height:2;color:var(--muted2);letter-spacing:0.5px;
+}
+.privacy strong{color:var(--cyan);}
+
+/* ─── STREAK DOTS ─── */
+.streak-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.sdot{
+  width:30px;height:30px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:var(--muted);
+  transition:all 0.3s;
+}
+.sdot.done{
+  background:rgba(34,197,94,0.15);
+  border-color:var(--green);color:var(--green);
+}
+.sdot.today{
+  background:rgba(245,166,35,0.15);
+  border-color:var(--amber);color:var(--amber);
+}
+
+/* ─── DAILY DASHBOARD ─── */
+.dash-hero{
+  display:flex;gap:12px;align-items:stretch;
+}
+.dash-main{flex:1;}
+.dash-side{display:flex;flex-direction:column;gap:10px;width:90px;}
+.dash-side-card{
+  background:var(--card);border-radius:10px;
+  border:1px solid var(--border);padding:10px;
+  text-align:center;flex:1;
+}
+.dash-side-val{
+  font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;
+  background:linear-gradient(135deg,var(--amber),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.dash-side-lbl{font-size:7px;letter-spacing:2px;color:var(--muted);margin-top:2px;}
+
+/* ─── NOTIFICATION LIST ─── */
+.notif-list{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto;}
+.notif-item{
+  background:var(--surface2);border-radius:10px;
+  padding:10px 12px;
+  display:flex;gap:10px;align-items:center;
+  font-size:10px;letter-spacing:1px;color:var(--text);
+  border:1px solid var(--border);
+}
+.notif-ico{font-size:18px;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<!-- ════ SPLASH ════ -->
+<div id="splash">
+  <div class="splash-hex">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f5a623"/>
+          <stop offset="100%" stop-color="#00d4ff"/>
+        </linearGradient>
+      </defs>
+      <polygon points="50,5 93,27.5 93,72.5 50,95 7,72.5 7,27.5"
+        fill="none" stroke="url(#hexGrad)" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="50,15 83,32.5 83,67.5 50,85 17,67.5 17,32.5"
+        fill="none" stroke="url(#hexGrad)" stroke-width="1" stroke-linejoin="round" opacity="0.3"/>
+    </svg>
+    <div class="splash-inner">🏃</div>
+  </div>
+  <div class="splash-name">RUNTRACKER</div>
+  <div class="splash-tag">PRO · LOCAL · PRIVATE · YOURS</div>
+  <div class="splash-track"><div class="splash-fill"></div></div>
+</div>
+
+<!-- ════ MILESTONE BANNER ════ -->
+<div class="milestone" id="milestoneBanner">🏆 MILESTONE REACHED!</div>
+
+<!-- ════ RESET MODAL ════ -->
+<div class="overlay" id="resetModal">
+  <div class="modal">
+    <div class="modal-ico">⚠️</div>
+    <div class="modal-title">RESET ALL DATA</div>
+    <div class="modal-body">This permanently deletes all runs, goals, and settings on this device. This cannot be undone.</div>
+    <div class="modal-btns">
+      <button class="mbtn cancel" onclick="closeModal('resetModal')">Cancel</button>
+      <button class="mbtn confirm" onclick="confirmReset()">Delete All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MANUAL ENTRY MODAL ════ -->
+<div class="overlay" id="manualModal">
+  <div class="modal" style="text-align:left;">
+    <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;margin-bottom:16px;color:var(--amber);">MANUAL ENTRY</div>
+    <div class="form-grid">
+      <div>
+        <span class="field-lbl">DISTANCE (km)</span>
+        <input class="field" id="mKm" type="number" step="0.01" min="0" placeholder="5.00" inputmode="decimal"/>
+      </div>
+      <div>
+        <span class="field-lbl">DURATION (min)</span>
+        <input class="field" id="mMin" type="number" step="1" min="0" placeholder="30" inputmode="numeric"/>
+      </div>
+      <div>
+        <span class="field-lbl">STEPS</span>
+        <input class="field" id="mSteps" type="number" step="1" min="0" placeholder="6500" inputmode="numeric"/>
+      </div>
+      <div>
+        <span class="field-lbl">DATE</span>
+        <input class="field" id="mDate" type="date"/>
+      </div>
+    </div>
+    <div style="margin-top:10px;">
+      <span class="field-lbl">ACTIVITY TYPE</span>
+      <div class="goal-chips">
+        <div class="chip on" data-act="run" onclick="selectAct(this)">🏃 Run</div>
+        <div class="chip" data-act="walk" onclick="selectAct(this)">🚶 Walk</div>
+        <div class="chip" data-act="bike" onclick="selectAct(this)">🚴 Bike</div>
+        <div class="chip" data-act="hike" onclick="selectAct(this)">🥾 Hike</div>
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:18px;">
+      <button class="mbtn cancel" onclick="closeModal('manualModal')">Cancel</button>
+      <button class="mbtn confirm" style="background:linear-gradient(135deg,var(--amber),var(--amber2));color:#0d0900;" onclick="saveManual()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ TOAST ════ -->
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">RUNTRACKER PRO</div>
+    <div class="topbar-right">
+      <div class="live-badge">
+        <div class="live-dot" id="liveDot"></div>
+        <span id="liveText">IDLE</span>
+      </div>
+      <div class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">🌙</div>
+      <div class="icon-btn" onclick="openModal('manualModal')" title="Manual entry">✏️</div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav">
+    <div class="nav-tab on" onclick="goTab('dash')" id="tab-dash"><span class="ni">📊</span>TODAY</div>
+    <div class="nav-tab" onclick="goTab('run')" id="tab-run"><span class="ni">🏃</span>RUN</div>
+    <div class="nav-tab" onclick="goTab('history')" id="tab-history"><span class="ni">📋</span>HISTORY</div>
+    <div class="nav-tab" onclick="goTab('goals')" id="tab-goals"><span class="ni">🎯</span>GOALS</div>
+    <div class="nav-tab" onclick="goTab('settings')" id="tab-settings"><span class="ni">⚙️</span>SETTINGS</div>
+  </div>
+
+  <!-- ── TODAY / DASHBOARD ── -->
+  <div class="page on" id="page-dash">
+    <div class="clabel">Daily Overview · <span id="dashDate">—</span></div>
+
+    <div class="dash-hero">
+      <!-- Step Ring -->
+      <div class="card dash-main" style="display:flex;flex-direction:column;align-items:center;">
+        <div class="clabel" style="width:100%;text-align:center;">STEPS TODAY</div>
+        <div class="goal-ring-wrap">
+          <svg class="ring-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f5a623"/>
+                <stop offset="100%" stop-color="#00d4ff"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-bg" cx="70" cy="70" r="56"/>
+            <circle class="ring-fill" cx="70" cy="70" r="56" id="stepRing"
+              stroke-dasharray="351.86" stroke-dashoffset="351.86"/>
+            <text class="ring-text-top" x="70" y="65" id="ringStepVal">0</text>
+            <text class="ring-text-bot" x="70" y="85" id="ringGoalLbl">/ 10000 GOAL</text>
+          </svg>
+        </div>
+        <div class="pbar-wrap" style="width:100%;">
+          <div class="pbar-fill" id="stepBarDash" style="width:0%"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:6px;" id="stepPctLabel">0% OF GOAL</div>
+      </div>
+
+      <!-- Side cards -->
+      <div class="dash-side">
+        <div class="dash-side-card">
+          <div class="dash-side-val" id="dashKm">0.0</div>
+          <div class="dash-side-lbl">KM TODAY</div>
+        </div>
+        <div class="dash-side-card">
+          <div class="dash-side-val" id="dashCal">0</div>
+          <div class="dash-side-lbl">CALORIES</div>
+        </div>
+        <div class="dash-side-card">
+          <div class="dash-side-val" id="dashRuns">0</div>
+          <div class="dash-side-lbl">ACTIVITIES</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Streak -->
+    <div class="card">
+      <div class="clabel">7-DAY STREAK</div>
+      <div class="streak-row" id="streakRow"></div>
+    </div>
+
+    <!-- Recent notifications -->
+    <div class="card" id="notifCard" style="display:none;">
+      <div class="clabel">RECENT MILESTONES</div>
+      <div class="notif-list" id="notifList"></div>
+    </div>
+
+    <!-- Weekly chart -->
+    <div class="card">
+      <div class="clabel">WEEKLY DISTANCE (KM)</div>
+      <div class="chart-wrap">
+        <canvas id="weekChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RUN PAGE ── -->
+  <div class="page" id="page-run">
+    <!-- GPS Status -->
+    <div class="gps-bar" id="gpsBar">
+      <span class="gps-icon">📡</span>
+      <span class="gps-txt" id="gpsTxt">GPS NOT ACTIVE</span>
+      <span class="gps-acc" id="gpsAcc"></span>
+    </div>
+
+    <!-- Timer -->
+    <div class="card">
+      <div class="clabel">SESSION TIMER</div>
+      <div class="timer-wrap">
+        <div class="timer-big" id="timerBig">00:00:00</div>
+        <div class="timer-ms" id="timerMs">.000</div>
+      </div>
+    </div>
+
+    <!-- Live metrics -->
+    <div class="metrics4">
+      <div class="mcard c1"><div class="mval" id="rKm">0.00</div><div class="munit">KM</div></div>
+      <div class="mcard c2"><div class="mval" id="rPace">--:--</div><div class="munit">PACE/KM</div></div>
+      <div class="mcard c3"><div class="mval" id="rCal">0</div><div class="munit">CALORIES</div></div>
+      <div class="mcard c4"><div class="mval" id="rSteps">0</div><div class="munit">STEPS</div></div>
+    </div>
+
+    <!-- Sensor steps override -->
+    <div class="card" style="padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="clabel" style="margin:0;">PEDOMETER (DEVICE SENSOR)</div>
+        <div class="toggle" id="pedometerToggle" onclick="togglePedometer()"></div>
+      </div>
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:6px;" id="pedomTxt">
+        Enable to count steps using device motion sensor
+      </div>
+    </div>
+
+    <!-- Audio feedback -->
+    <div class="card" style="padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="clabel" style="margin:0;">AUDIO UPDATES</div>
+        <div class="toggle" id="audioToggle" onclick="toggleAudio()"></div>
+      </div>
+      <div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:6px;">
+        Spoken updates every km milestone
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="btn-row">
+      <div class="btn-sq" id="lapBtn" onclick="lapRun()" style="display:none;" title="Lap">🔄</div>
+      <button class="btn-main" id="mainBtn" onclick="toggleRun()">START RUN</button>
+      <div class="btn-sq" id="stopBtn" onclick="stopRun()" style="display:none;" title="Stop">⏹️</div>
+    </div>
+
+    <!-- Lap list -->
+    <div id="lapSection" style="display:none;">
+      <div class="clabel">LAP TIMES</div>
+      <div id="lapList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ── HISTORY PAGE ── -->
+  <div class="page" id="page-history">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="clabel">ALL ACTIVITIES</div>
+      <div style="font-size:9px;color:var(--muted2);letter-spacing:1px;" id="histCount"></div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="card">
+      <div class="clabel">MONTHLY DISTANCE TREND</div>
+      <div class="chart-wrap">
+        <canvas id="histChart"></canvas>
+      </div>
+    </div>
+
+    <div id="histList" style="display:flex;flex-direction:column;gap:8px;"></div>
+  </div>
+
+  <!-- ── GOALS PAGE ── -->
+  <div class="page" id="page-goals">
+    <div class="clabel">CUSTOM GOALS</div>
+
+    <!-- Daily Steps Goal -->
+    <div class="card">
+      <div class="clabel">DAILY STEP GOAL</div>
+      <div class="goal-chips" id="stepGoalChips">
+        <div class="chip" data-val="5000" onclick="pickStepGoal(this)">5K</div>
+        <div class="chip" data-val="8000" onclick="pickStepGoal(this)">8K</div>
+        <div class="chip on" data-val="10000" onclick="pickStepGoal(this)">10K</div>
+        <div class="chip" data-val="12000" onclick="pickStepGoal(this)">12K</div>
+        <div class="chip" data-val="15000" onclick="pickStepGoal(this)">15K</div>
+      </div>
+      <div class="field-row" style="margin-top:12px;">
+        <input class="field" id="customStepGoal" type="number" placeholder="Custom steps..." inputmode="numeric" style="flex:1;"/>
+        <button class="btn-sq" onclick="setCustomStepGoal()" style="font-size:12px;font-family:'JetBrains Mono',monospace;width:auto;padding:0 14px;height:auto;">SET</button>
+      </div>
+    </div>
+
+    <!-- Daily Distance Goal -->
+    <div class="card">
+      <div class="clabel">DAILY DISTANCE GOAL (KM)</div>
+      <div class="goal-chips" id="kmGoalChips">
+        <div class="chip" data-val="3" onclick="pickKmGoal(this)">3 km</div>
+        <div class="chip on" data-val="5" onclick="pickKmGoal(this)">5 km</div>
+        <div class="chip" data-val="8" onclick="pickKmGoal(this)">8 km</div>
+        <div class="chip" data-val="10" onclick="pickKmGoal(this)">10 km</div>
+        <div class="chip" data-val="21" onclick="pickKmGoal(this)">21 km</div>
+      </div>
+      <div class="field-row" style="margin-top:12px;">
+        <input class="field" id="customKmGoal" type="number" placeholder="Custom km..." step="0.5" inputmode="decimal" style="flex:1;"/>
+        <button class="btn-sq" onclick="setCustomKmGoal()" style="font-size:12px;font-family:'JetBrains Mono',monospace;width:auto;padding:0 14px;height:auto;">SET</button>
+      </div>
+    </div>
+
+    <!-- Weekly Distance Goal -->
+    <div class="card">
+      <div class="clabel">WEEKLY KM GOAL</div>
+      <div class="goal-chips" id="weekGoalChips">
+        <div class="chip" data-val="20" onclick="pickWeekGoal(this)">20 km</div>
+        <div class="chip on" data-val="40" onclick="pickWeekGoal(this)">40 km</div>
+        <div class="chip" data-val="60" onclick="pickWeekGoal(this)">60 km</div>
+        <div class="chip" data-val="100" onclick="pickWeekGoal(this)">100 km</div>
+      </div>
+    </div>
+
+    <!-- Today's progress vs goals -->
+    <div class="card">
+      <div class="clabel">TODAY'S PROGRESS</div>
+      <div class="stat-row">
+        <span class="stat-lbl">STEPS</span>
+        <span class="stat-val hi" id="gStepVal">0 / 10000</span>
+      </div>
+      <div class="pbar-wrap"><div class="pbar-fill" id="gStepBar" style="width:0%"></div></div>
+      <div class="stat-row">
+        <span class="stat-lbl">DISTANCE</span>
+        <span class="stat-val hi" id="gKmVal">0 / 5 km</span>
+      </div>
+      <div class="pbar-wrap"><div class="pbar-fill green" id="gKmBar" style="width:0%"></div></div>
+      <div class="stat-row">
+        <span class="stat-lbl">WEEKLY KM</span>
+        <span class="stat-val hi" id="gWeekVal">0 / 40 km</span>
+      </div>
+      <div class="pbar-wrap"><div class="pbar-fill" id="gWeekBar" style="width:0%"></div></div>
+    </div>
+
+    <!-- Body weight for calories -->
+    <div class="card">
+      <div class="clabel">BODY WEIGHT (FOR CALORIE ACCURACY)</div>
+      <div class="field-row">
+        <input class="field" id="bodyWeight" type="number" min="30" max="300" placeholder="70 kg" inputmode="numeric" style="flex:1;"/>
+        <span style="font-size:11px;color:var(--muted2);white-space:nowrap;">KG</span>
+        <button class="btn-sq" onclick="saveWeight()" style="font-size:12px;font-family:'JetBrains Mono',monospace;width:auto;padding:0 14px;height:auto;">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS PAGE ── -->
+  <div class="page" id="page-settings">
+    <div class="clabel">APP SETTINGS</div>
+
+    <div class="srow" onclick="toggleTheme()">
+      <div class="srow-info">
+        <div class="slbl">Dark / Light Mode</div>
+        <div class="ssub" id="themeSub">Currently: DARK</div>
+      </div>
+      <span class="sarrow" id="themeIcon">🌙</span>
+    </div>
+
+    <div class="srow" onclick="openModal('manualModal')">
+      <div class="srow-info">
+        <div class="slbl">Manual Activity Entry</div>
+        <div class="ssub">Log a run without GPS</div>
+      </div>
+      <span class="sarrow">✏️</span>
+    </div>
+
+    <div class="srow" onclick="exportData()">
+      <div class="srow-info">
+        <div class="slbl">Export All Data</div>
+        <div class="ssub">Download as JSON file</div>
+      </div>
+      <span class="sarrow">📤</span>
+    </div>
+
+    <div class="srow danger" onclick="openModal('resetModal')">
+      <div class="srow-info">
+        <div class="slbl">Reset All Data</div>
+        <div class="ssub">Permanently delete everything</div>
+      </div>
+      <span class="sarrow">🗑️</span>
+    </div>
+
+    <div class="clabel" style="margin-top:4px;">PRIVACY</div>
+    <div class="privacy">
+      <strong>🔒 100% LOCAL STORAGE</strong><br/>
+      All data lives in IndexedDB on this device only.<br/>
+      <strong>✓ No cloud sync · No accounts · No tracking</strong><br/>
+      <strong>✓ GPS only used while running, never stored as coordinates</strong><br/>
+      <strong>✓ Works fully offline · No external requests</strong><br/>
+      <strong>✓ Step sensor data never transmitted</strong>
+    </div>
+
+    <div style="text-align:center;font-size:8px;color:var(--muted);letter-spacing:2px;padding:10px;">
+      RUNTRACKER PRO v2.0 · ALL DATA LOCAL
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════════════════
+   DATABASE (IndexedDB)
+════════════════════════════════════════════ */
+const DB='RunTrackerProDB', VER=2, ST='runs';
+let db=null;
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB,VER);
+    r.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains(ST)){
+        d.createObjectStore(ST,{keyPath:'id',autoIncrement:true});
+      }
+    };
+    r.onsuccess=e=>{db=e.target.result;res(db);};
+    r.onerror=e=>rej(e);
+  });
+}
+function dbAdd(run){
+  return new Promise((res,rej)=>{
+    const t=db.transaction(ST,'readwrite');
+    const r=t.objectStore(ST).add(run);
+    r.onsuccess=()=>res(r.result);
+    r.onerror=e=>rej(e);
+  });
+}
+function dbGetAll(){
+  return new Promise((res,rej)=>{
+    const t=db.transaction(ST,'readonly');
+    const r=t.objectStore(ST).getAll();
+    r.onsuccess=()=>res(r.result);
+    r.onerror=e=>rej(e);
+  });
+}
+function dbClear(){
+  return new Promise((res,rej)=>{
+    const t=db.transaction(ST,'readwrite');
+    const r=t.objectStore(ST).clear();
+    r.onsuccess=()=>res();
+    r.onerror=e=>rej(e);
+  });
+}
+
+/* ════════════════════════════════════════════
+   SETTINGS (localStorage)
+════════════════════════════════════════════ */
+function gs(k,def){const v=localStorage.getItem('rt_'+k);return v!==null?JSON.parse(v):def;}
+function ss(k,v){localStorage.setItem('rt_'+k,JSON.stringify(v));}
+
+/* ════════════════════════════════════════════
+   TIMER + RUN STATE
+════════════════════════════════════════════ */
+let running=false, paused=false;
+let startTime=0, elapsed=0;
+let timerIv=null;
+let currentKm=0, currentSteps=0, lastKmAnnounced=0;
+let laps=[], lastLapT=0;
+let gpsWatchId=null, positions=[];
+let pedomActive=false, pedomBase=null;
+let audioOn=false;
+
+function toggleRun(){
+  if(!running&&!paused){
+    // START
+    startTime=Date.now()-elapsed;
+    running=true;paused=false;
+    if(pedomActive) startPedometer();
+    startGPS();
+    timerIv=setInterval(tick,50);
+    laps=[];lastLapT=0;lastKmAnnounced=0;
+    updateRunUI();showToast('Run started! 🏃');
+  } else if(running){
+    // PAUSE
+    clearInterval(timerIv);elapsed=Date.now()-startTime;
+    paused=true;running=false;
+    stopGPS();
+    updateRunUI();showToast('Paused');
+  } else if(paused){
+    // RESUME
+    startTime=Date.now()-elapsed;
+    running=true;paused=false;
+    startGPS();
+    timerIv=setInterval(tick,50);
+    updateRunUI();showToast('Resumed!');
+  }
+}
+
+function stopRun(){
+  if(!running&&!paused)return;
+  clearInterval(timerIv);
+  const ms=running?(Date.now()-startTime):elapsed;
+  stopGPS(); stopPedometer();
+
+  if(ms<4000&&currentKm<0.01){
+    resetRunState();updateRunUI();showToast('Run discarded');return;
+  }
+  const run={
+    date:new Date().toISOString(),
+    durationMs:ms,
+    km:parseFloat(currentKm.toFixed(4)),
+    steps:currentSteps,
+    calories:calcCal(currentKm,currentSteps),
+    type:'run',
+    laps:[...laps],
+    manual:false
+  };
+  dbAdd(run).then(()=>{
+    showToast('Run saved! 🎉');
+    checkMilestones(run);
+    refreshAll();
+  });
+  resetRunState();updateRunUI();
+}
+
+function resetRunState(){
+  running=false;paused=false;elapsed=0;
+  currentKm=0;currentSteps=0;lastKmAnnounced=0;
+  laps=[];lastLapT=0;positions=[];pedomBase=null;
+  setEl('timerBig','00:00:00');setEl('timerMs','.000');
+  setEl('rKm','0.00');setEl('rPace','--:--');
+  setEl('rCal','0');setEl('rSteps','0');
+  document.getElementById('lapSection').style.display='none';
+  document.getElementById('lapList').innerHTML='';
+}
+
+function tick(){
+  const ms=Date.now()-startTime;elapsed=ms;
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000), s=Math.floor((ms%60000)/1000);
+  setEl('timerBig',pad(h)+':'+pad(m)+':'+pad(s));
+  setEl('timerMs','.'+String(ms%1000).padStart(3,'0'));
+  setEl('rKm',currentKm.toFixed(2));
+  setEl('rCal',calcCal(currentKm,currentSteps));
+  setEl('rSteps',currentSteps.toLocaleString());
+  if(currentKm>0&&ms>0){
+    const pm=Math.floor(ms/currentKm/60000), ps=Math.floor((ms/currentKm%60000)/1000);
+    setEl('rPace',pm+':'+pad(ps));
+  }
+  // km audio milestone
+  const kmFloor=Math.floor(currentKm);
+  if(audioOn&&kmFloor>0&&kmFloor>lastKmAnnounced){
+    lastKmAnnounced=kmFloor;
+    speak(kmFloor+' kilometre'+(kmFloor>1?'s':'')+' completed. Keep going!');
+  }
+}
+
+function updateRunUI(){
+  const btn=document.getElementById('mainBtn');
+  const stopB=document.getElementById('stopBtn');
+  const lapB=document.getElementById('lapBtn');
+  const dot=document.getElementById('liveDot');
+  const ltx=document.getElementById('liveText');
+  const tb=document.getElementById('timerBig');
+  if(running){
+    btn.textContent='PAUSE';btn.className='btn-main pause';
+    stopB.style.display='flex';lapB.style.display='flex';
+    dot.classList.add('on');ltx.textContent='RUNNING';
+    tb.classList.add('active');
+  } else if(paused){
+    btn.textContent='RESUME';btn.className='btn-main';
+    stopB.style.display='flex';lapB.style.display='flex';
+    dot.classList.remove('on');ltx.textContent='PAUSED';
+    tb.classList.remove('active');
+  } else {
+    btn.textContent='START RUN';btn.className='btn-main';
+    stopB.style.display='none';lapB.style.display='none';
+    dot.classList.remove('on');ltx.textContent='IDLE';
+    tb.classList.remove('active');
+  }
+}
+
+function lapRun(){
+  const lapMs=elapsed-lastLapT;lastLapT=elapsed;
+  const n=laps.length+1;laps.push({lap:n,ms:lapMs});
+  const el=document.getElementById('lapList');
+  const sec=document.getElementById('lapSection');
+  sec.style.display='block';
+  const d=document.createElement('div');
+  d.className='run-item';d.style.padding='10px 12px';
+  d.innerHTML=`<div class="run-icon" style="font-size:14px;width:32px;height:32px;">L${n}</div>
+    <div class="run-info"><div class="run-stats"><span class="run-pill">⏱ ${fmtDur(lapMs)}</span><span class="run-pill">${currentKm.toFixed(2)} km</span></div></div>`;
+  el.prepend(d);
+  showToast('Lap '+n+' saved');
+}
+
+/* ════════════════════════════════════════════
+   GPS
+════════════════════════════════════════════ */
+function startGPS(){
+  if(!navigator.geolocation){
+    setEl('gpsTxt','GPS NOT AVAILABLE');return;
+  }
+  setEl('gpsTxt','ACQUIRING GPS...');
+  gpsWatchId=navigator.geolocation.watchPosition(onGPS,onGPSErr,{
+    enableHighAccuracy:true,maximumAge:1000,timeout:10000
+  });
+}
+function stopGPS(){
+  if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;}
+  setEl('gpsTxt','GPS STOPPED');setEl('gpsAcc','');
+}
+function onGPS(pos){
+  const acc=Math.round(pos.coords.accuracy);
+  setEl('gpsTxt','GPS ACTIVE');
+  setEl('gpsAcc','±'+acc+'m');
+  if(acc>50)return; // skip low accuracy
+  const c={lat:pos.coords.latitude,lng:pos.coords.longitude,t:Date.now()};
+  if(positions.length>0){
+    const prev=positions[positions.length-1];
+    const d=haversine(prev.lat,prev.lng,c.lat,c.lng);
+    if(d>0.002&&d<0.5){currentKm+=d;}
+  }
+  positions.push(c);
+  // estimate steps from GPS km (1 km ≈ 1312 steps)
+  if(!pedomActive){currentSteps=Math.round(currentKm*1312);}
+}
+function onGPSErr(e){setEl('gpsTxt','GPS ERROR — MANUAL MODE');}
+
+function haversine(la1,lo1,la2,lo2){
+  const R=6371,dL=(la2-la1)*Math.PI/180,dO=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+/* ════════════════════════════════════════════
+   PEDOMETER (DeviceMotionEvent)
+════════════════════════════════════════════ */
+let pedomEnabled=false;
+let stepBuffer=[], lastStepTime=0, stepThreshold=12;
+let pedomStepCount=0;
+
+function togglePedometer(){
+  pedomEnabled=!pedomEnabled;
+  const t=document.getElementById('pedometerToggle');
+  t.classList.toggle('on',pedomEnabled);
+  ss('pedomEnabled',pedomEnabled);
+  setEl('pedomTxt', pedomEnabled?'Pedometer ON — device motion counting steps':'Enable to count steps using device motion sensor');
+  if(pedomEnabled&&running)startPedometer();
+  else stopPedometer();
+  showToast(pedomEnabled?'Pedometer enabled':'Pedometer disabled');
+}
+
+function startPedometer(){
+  pedomActive=true;pedomStepCount=0;
+  if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission){
+    DeviceMotionEvent.requestPermission().then(s=>{
+      if(s==='granted')window.addEventListener('devicemotion',onMotion,{passive:true});
+      else {pedomActive=false;showToast('Motion permission denied');}
+    }).catch(()=>{pedomActive=false;});
+  } else if(typeof DeviceMotionEvent!=='undefined'){
+    window.addEventListener('devicemotion',onMotion,{passive:true});
+  } else {
+    pedomActive=false;showToast('Motion sensor not available');
+  }
+}
+function stopPedometer(){
+  pedomActive=false;
+  window.removeEventListener('devicemotion',onMotion);
+}
+
+function onMotion(e){
+  if(!running)return;
+  const acc=e.accelerationIncludingGravity;
+  if(!acc)return;
+  const mag=Math.sqrt((acc.x||0)**2+(acc.y||0)**2+(acc.z||0)**2);
+  stepBuffer.push(mag);
+  if(stepBuffer.length>5)stepBuffer.shift();
+  const avg=stepBuffer.reduce((a,b)=>a+b,0)/stepBuffer.length;
+  const now=Date.now();
+  if(mag>avg+stepThreshold&&(now-lastStepTime)>250){
+    lastStepTime=now;pedomStepCount++;
+    currentSteps=pedomStepCount;
+    // estimate km from steps: 1 step ≈ 0.762m
+    if(!gpsWatchId)currentKm=pedomStepCount*0.000762;
+  }
+}
+
+/* ════════════════════════════════════════════
+   AUDIO (Speech Synthesis)
+════════════════════════════════════════════ */
+function toggleAudio(){
+  audioOn=!audioOn;
+  document.getElementById('audioToggle').classList.toggle('on',audioOn);
+  ss('audioOn',audioOn);
+  if(audioOn)speak('Audio feedback enabled. You will receive updates every kilometre.');
+  else showToast('Audio feedback off');
+}
+function speak(txt){
+  if(!window.speechSynthesis)return;
+  const u=new SpeechSynthesisUtterance(txt);
+  u.rate=0.95;u.pitch=1;u.volume=1;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(u);
+}
+
+/* ════════════════════════════════════════════
+   MILESTONES / NOTIFICATIONS
+════════════════════════════════════════════ */
+const MILESTONES=[
+  {key:'10k_steps',check:r=>r.steps>=10000,msg:'🎉 10,000 steps in one run!'},
+  {key:'5km',check:r=>r.km>=5,msg:'🏅 5 km run completed!'},
+  {key:'10km',check:r=>r.km>=10,msg:'🏆 10 km milestone!'},
+  {key:'half_marathon',check:r=>r.km>=21.097,msg:'🌟 Half Marathon!'},
+  {key:'first_run',check:(r,all)=>all.length===1,msg:'🚀 First run logged!'},
+  {key:'10_runs',check:(r,all)=>all.length===10,msg:'💯 10th run logged!'},
+  {key:'100km_total',check:(r,all)=>all.reduce((a,b)=>a+b.km,0)>=100,msg:'🌍 100 km total!'},
+];
+
+async function checkMilestones(newRun){
+  const all=await dbGetAll();
+  const earned=gs('milestones',[]);
+  MILESTONES.forEach(m=>{
+    if(!earned.includes(m.key)&&m.check(newRun,all)){
+      earned.push(m.key);
+      showMilestoneBanner(m.msg);
+      if(audioOn)speak(m.msg.replace(/[🎉🏅🏆🌟🚀💯🌍]/g,''));
+      logNotif(m.msg);
+      // Web Notification
+      if(Notification&&Notification.permission==='granted'){
+        new Notification('RunTracker Pro',{body:m.msg,icon:''});
+      }
+    }
+  });
+  ss('milestones',earned);
+}
+
+function showMilestoneBanner(msg){
+  const b=document.getElementById('milestoneBanner');
+  b.textContent=msg;b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'),3500);
+}
+
+function logNotif(msg){
+  const notifs=gs('notifs',[]);
+  notifs.unshift({msg,time:new Date().toISOString()});
+  if(notifs.length>20)notifs.pop();
+  ss('notifs',notifs);
+  renderNotifs();
+}
+
+function renderNotifs(){
+  const notifs=gs('notifs',[]);
+  const card=document.getElementById('notifCard');
+  const list=document.getElementById('notifList');
+  if(!notifs.length){card.style.display='none';return;}
+  card.style.display='block';
+  list.innerHTML=notifs.slice(0,5).map(n=>{
+    const d=new Date(n.time);
+    return `<div class="notif-item">
+      <span class="notif-ico">${n.msg.charAt(0)}</span>
+      <div>
+        <div>${n.msg.slice(2)}</div>
+        <div style="font-size:8px;color:var(--muted);margin-top:2px;">${d.toLocaleDateString()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   GOALS
+════════════════════════════════════════════ */
+function pickStepGoal(el){
+  document.querySelectorAll('#stepGoalChips .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  ss('goalSteps',parseInt(el.dataset.val));
+  refreshGoals();showToast('Step goal: '+el.dataset.val);
+}
+function pickKmGoal(el){
+  document.querySelectorAll('#kmGoalChips .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  ss('goalKm',parseFloat(el.dataset.val));
+  refreshGoals();showToast('Distance goal: '+el.dataset.val+' km');
+}
+function pickWeekGoal(el){
+  document.querySelectorAll('#weekGoalChips .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  ss('goalWeekKm',parseFloat(el.dataset.val));
+  refreshGoals();showToast('Weekly goal: '+el.dataset.val+' km');
+}
+function setCustomStepGoal(){
+  const v=parseInt(document.getElementById('customStepGoal').value);
+  if(isNaN(v)||v<100){showToast('Enter a valid step count');return;}
+  ss('goalSteps',v);
+  document.querySelectorAll('#stepGoalChips .chip').forEach(c=>c.classList.remove('on'));
+  refreshGoals();showToast('Custom step goal: '+v.toLocaleString());
+}
+function setCustomKmGoal(){
+  const v=parseFloat(document.getElementById('customKmGoal').value);
+  if(isNaN(v)||v<=0){showToast('Enter a valid distance');return;}
+  ss('goalKm',v);
+  document.querySelectorAll('#kmGoalChips .chip').forEach(c=>c.classList.remove('on'));
+  refreshGoals();showToast('Custom km goal: '+v+' km');
+}
+function saveWeight(){
+  const v=parseInt(document.getElementById('bodyWeight').value);
+  if(isNaN(v)||v<30||v>300){showToast('Enter 30–300 kg');return;}
+  ss('weight',v);showToast('Weight saved: '+v+' kg');
+}
+
+async function refreshGoals(){
+  const runs=await dbGetAll();
+  const todayRuns=todayData(runs);
+  const weekKm=weekData(runs);
+  const goalSteps=gs('goalSteps',10000);
+  const goalKm=gs('goalKm',5);
+  const goalWeek=gs('goalWeekKm',40);
+  const steps=todayRuns.reduce((a,r)=>a+r.steps,0);
+  const km=todayRuns.reduce((a,r)=>a+r.km,0);
+
+  setEl('gStepVal',steps.toLocaleString()+' / '+goalSteps.toLocaleString());
+  document.getElementById('gStepBar').style.width=pct(steps,goalSteps)+'%';
+  setEl('gKmVal',km.toFixed(1)+' / '+goalKm+' km');
+  document.getElementById('gKmBar').style.width=pct(km,goalKm)+'%';
+  setEl('gWeekVal',weekKm.toFixed(1)+' / '+goalWeek+' km');
+  document.getElementById('gWeekBar').style.width=pct(weekKm,goalWeek)+'%';
+}
+
+/* ════════════════════════════════════════════
+   DASHBOARD
+════════════════════════════════════════════ */
+async function refreshDash(){
+  const runs=await dbGetAll();
+  const td=todayData(runs);
+  const goalSteps=gs('goalSteps',10000);
+  const steps=td.reduce((a,r)=>a+r.steps,0);
+  const km=td.reduce((a,r)=>a+r.km,0);
+  const cal=td.reduce((a,r)=>a+r.calories,0);
+
+  setEl('dashDate',new Date().toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}));
+  setEl('dashKm',km.toFixed(1));
+  setEl('dashCal',cal);
+  setEl('dashRuns',td.length);
+  setEl('ringStepVal',steps>=1000?Math.round(steps/1000)+'K':steps);
+  setEl('ringGoalLbl','/ '+Math.round(goalSteps/1000)+'K GOAL');
+
+  const p=pct(steps,goalSteps);
+  const ring=document.getElementById('stepRing');
+  const circ=351.86;
+  ring.style.strokeDashoffset=circ-(circ*Math.min(100,p)/100);
+  document.getElementById('stepBarDash').style.width=p+'%';
+  setEl('stepPctLabel',Math.round(p)+'% OF GOAL');
+
+  renderStreak(runs);
+  renderWeekChart(runs);
+  renderNotifs();
+}
+
+function renderStreak(runs){
+  const row=document.getElementById('streakRow');
+  row.innerHTML='';
+  const today=new Date();today.setHours(0,0,0,0);
+  for(let i=6;i>=0;i--){
+    const d=new Date(today);d.setDate(today.getDate()-i);
+    const next=new Date(d);next.setDate(d.getDate()+1);
+    const has=runs.some(r=>{const rd=new Date(r.date);return rd>=d&&rd<next;});
+    const isToday=i===0;
+    const dot=document.createElement('div');
+    dot.className='sdot'+(has?' done':'')+(isToday&&has?' today':'');
+    dot.textContent=has?'✓':d.toLocaleDateString(undefined,{weekday:'narrow'});
+    dot.title=d.toLocaleDateString(undefined,{weekday:'long'});
+    row.appendChild(dot);
+  }
+}
+
+function renderWeekChart(runs){
+  const canvas=document.getElementById('weekChart');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio||600;
+  canvas.height=240;
+  const today=new Date();today.setHours(0,0,0,0);
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(today);d.setDate(today.getDate()-i);
+    const next=new Date(d);next.setDate(d.getDate()+1);
+    const km=runs.filter(r=>{const rd=new Date(r.date);return rd>=d&&rd<next;}).reduce((a,r)=>a+r.km,0);
+    days.push({label:d.toLocaleDateString(undefined,{weekday:'short'}),km});
+  }
+  drawBarChart(ctx,days,canvas.width,canvas.height);
+}
+
+function drawBarChart(ctx,data,w,h){
+  const dpr=window.devicePixelRatio||1;
+  const pad={t:10,r:10,b:30,l:30};
+  const cw=w-pad.l-pad.r, ch=h-pad.t-pad.b;
+  const maxV=Math.max(...data.map(d=>d.km),1);
+  ctx.clearRect(0,0,w,h);
+  // Grid
+  const isDark=!document.documentElement.dataset.theme||document.documentElement.dataset.theme!=='light';
+  ctx.strokeStyle=isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.08)';
+  ctx.lineWidth=1;
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const y=pad.t+ch-(ch*f);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
+  });
+  const barW=cw/data.length*0.6;
+  const gap=cw/data.length;
+  data.forEach((d,i)=>{
+    const x=pad.l+gap*i+gap*0.2;
+    const bh=ch*(d.km/maxV);
+    const y=pad.t+ch-bh;
+    // Gradient bar
+    const grd=ctx.createLinearGradient(0,y,0,pad.t+ch);
+    grd.addColorStop(0,'#f5a623');grd.addColorStop(1,'#00d4ff');
+    ctx.fillStyle=grd;
+    ctx.beginPath();
+    ctx.roundRect?ctx.roundRect(x,y,barW,bh,4):ctx.rect(x,y,barW,bh);
+    ctx.fill();
+    // Label
+    ctx.fillStyle=isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
+    ctx.font=`${10*dpr}px JetBrains Mono,monospace`;
+    ctx.textAlign='center';
+    ctx.fillText(d.label,x+barW/2,pad.t+ch+18*dpr/dpr);
+    if(d.km>0){
+      ctx.fillStyle=isDark?'rgba(255,255,255,0.7)':'rgba(0,0,0,0.6)';
+      ctx.fillText(d.km.toFixed(1),x+barW/2,y-6);
+    }
+  });
+}
+
+/* ════════════════════════════════════════════
+   HISTORY
+════════════════════════════════════════════ */
+async function refreshHistory(){
+  const runs=await dbGetAll();
+  const sorted=[...runs].reverse();
+  const list=document.getElementById('histList');
+  setEl('histCount',sorted.length+' ACTIVITIES');
+  if(!sorted.length){
+    list.innerHTML='<div class="empty"><span class="empty-ico">🏁</span>No activities yet.<br/>Start a run or add manually!</div>';
+  } else {
+    list.innerHTML=sorted.map(r=>{
+      const d=new Date(r.date);
+      const typeIcon={run:'🏃',walk:'🚶',bike:'🚴',hike:'🥾'}[r.type]||'🏃';
+      const manualTag=r.manual?'<span class="run-pill manual">MANUAL</span>':'';
+      return `<div class="run-item">
+        <div class="run-icon">${typeIcon}</div>
+        <div class="run-info">
+          <div class="run-date">${d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'})} · ${d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})}</div>
+          <div class="run-stats">
+            <span class="run-pill">${r.km.toFixed(2)} km</span>
+            <span class="run-pill">⏱ ${fmtDur(r.durationMs)}</span>
+            <span class="run-pill">👣 ${(r.steps||0).toLocaleString()}</span>
+            <span class="run-pill">🔥 ${r.calories}</span>
+            ${manualTag}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  // Monthly chart
+  await renderMonthChart(sorted);
+}
+
+async function renderMonthChart(runs){
+  const canvas=document.getElementById('histChart');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*window.devicePixelRatio||600;
+  canvas.height=240;
+  // last 8 weeks
+  const now=new Date();
+  const weeks=[];
+  for(let i=7;i>=0;i--){
+    const start=new Date(now);start.setDate(now.getDate()-now.getDay()-i*7);start.setHours(0,0,0,0);
+    const end=new Date(start);end.setDate(start.getDate()+7);
+    const km=runs.filter(r=>new Date(r.date)>=start&&new Date(r.date)<end).reduce((a,r)=>a+r.km,0);
+    weeks.push({label:'W'+(8-i),km});
+  }
+  drawBarChart(ctx,weeks,canvas.width,canvas.height);
+}
+
+/* ════════════════════════════════════════════
+   MANUAL ENTRY
+════════════════════════════════════════════ */
+let selectedAct='run';
+function selectAct(el){
+  document.querySelectorAll('[data-act]').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');selectedAct=el.dataset.act;
+}
+async function saveManual(){
+  const km=parseFloat(document.getElementById('mKm').value)||0;
+  const min=parseInt(document.getElementById('mMin').value)||0;
+  const steps=parseInt(document.getElementById('mSteps').value)||Math.round(km*1312);
+  const dateV=document.getElementById('mDate').value;
+  if(km<=0&&steps<=0){showToast('Enter distance or steps');return;}
+  const run={
+    date:dateV?(new Date(dateV).toISOString()):new Date().toISOString(),
+    durationMs:min*60000,
+    km,steps,
+    calories:calcCal(km,steps),
+    type:selectedAct,
+    laps:[],manual:true
+  };
+  await dbAdd(run);
+  closeModal('manualModal');
+  showToast('Activity logged manually ✓');
+  checkMilestones(run);
+  refreshAll();
+  ['mKm','mMin','mSteps','mDate'].forEach(id=>document.getElementById(id).value='');
+}
+
+/* ════════════════════════════════════════════
+   THEME
+════════════════════════════════════════════ */
+function toggleTheme(){
+  const isDark=!document.documentElement.dataset.theme||document.documentElement.dataset.theme==='dark';
+  if(isDark){
+    document.documentElement.dataset.theme='light';
+    ss('theme','light');
+    document.getElementById('themeBtn').textContent='☀️';
+    document.getElementById('themeIcon').textContent='☀️';
+    setEl('themeSub','Currently: LIGHT');
+  } else {
+    document.documentElement.dataset.theme='dark';
+    ss('theme','dark');
+    document.getElementById('themeBtn').textContent='🌙';
+    document.getElementById('themeIcon').textContent='🌙';
+    setEl('themeSub','Currently: DARK');
+  }
+  setTimeout(()=>refreshDash(),50);
+}
+
+/* ════════════════════════════════════════════
+   RESET / EXPORT
+════════════════════════════════════════════ */
+async function confirmReset(){
+  closeModal('resetModal');
+  await dbClear();
+  ['goalSteps','goalKm','goalWeekKm','weight','milestones','notifs','theme','audioOn','pedomEnabled']
+    .forEach(k=>localStorage.removeItem('rt_'+k));
+  refreshAll();showToast('All data deleted');
+}
+async function exportData(){
+  const runs=await dbGetAll();
+  const blob=new Blob([JSON.stringify({exported:new Date().toISOString(),runs},null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='runtracker_pro_'+Date.now()+'.json';
+  a.click();showToast('Data exported!');
+}
+
+/* ════════════════════════════════════════════
+   NAV TABS
+════════════════════════════════════════════ */
+function goTab(name){
+  ['dash','run','history','goals','settings'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('on',t===name);
+    document.getElementById('page-'+t).classList.toggle('on',t===name);
+  });
+  if(name==='dash')refreshDash();
+  if(name==='history')refreshHistory();
+  if(name==='goals')refreshGoals();
+}
+
+/* ════════════════════════════════════════════
+   HELPERS
+════════════════════════════════════════════ */
+function pad(n){return String(n).padStart(2,'0');}
+function setEl(id,v){const el=document.getElementById(id);if(el)el.textContent=v;}
+function fmtDur(ms){
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
+  return h>0?pad(h)+':'+pad(m)+':'+pad(s):pad(m)+':'+pad(s);
+}
+function calcCal(km,steps){
+  const w=gs('weight',70);
+  const fromKm=km*w*1.036;
+  const fromSteps=steps*0.04;
+  return Math.round(Math.max(fromKm,fromSteps));
+}
+function pct(v,max){return Math.min(100,max>0?(v/max*100):0);}
+function todayData(runs){
+  const s=new Date();s.setHours(0,0,0,0);
+  const e=new Date(s);e.setDate(s.getDate()+1);
+  return runs.filter(r=>new Date(r.date)>=s&&new Date(r.date)<e);
+}
+function weekData(runs){
+  const now=new Date(),ws=new Date(now);ws.setDate(now.getDate()-now.getDay());ws.setHours(0,0,0,0);
+  return runs.filter(r=>new Date(r.date)>=ws).reduce((a,r)=>a+r.km,0);
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2800);
+}
+function openModal(id){document.getElementById(id).classList.add('on');}
+function closeModal(id){document.getElementById(id).classList.remove('on');}
+
+async function refreshAll(){
+  refreshDash();refreshGoals();
+}
+
+/* ════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════ */
+window.addEventListener('load',async()=>{
+  await openDB();
+
+  // Restore theme
+  const theme=gs('theme','dark');
+  document.documentElement.dataset.theme=theme;
+  if(theme==='light'){
+    document.getElementById('themeBtn').textContent='☀️';
+    document.getElementById('themeIcon').textContent='☀️';
+    setEl('themeSub','Currently: LIGHT');
+  }
+
+  // Restore pedometer/audio
+  pedomEnabled=gs('pedomEnabled',false);
+  document.getElementById('pedometerToggle').classList.toggle('on',pedomEnabled);
+  setEl('pedomTxt',pedomEnabled?'Pedometer ON — device motion counting steps':'Enable to count steps using device motion sensor');
+
+  audioOn=gs('audioOn',false);
+  document.getElementById('audioToggle').classList.toggle('on',audioOn);
+
+  // Restore weight field
+  const w=gs('weight',70);
+  document.getElementById('bodyWeight').value=w;
+
+  // Goal chips
+  const gs_=gs('goalSteps',10000);
+  document.querySelectorAll('#stepGoalChips .chip').forEach(c=>{
+    c.classList.toggle('on',parseInt(c.dataset.val)===gs_);
+  });
+  const gk=gs('goalKm',5);
+  document.querySelectorAll('#kmGoalChips .chip').forEach(c=>{
+    c.classList.toggle('on',parseFloat(c.dataset.val)===gk);
+  });
+  const gw=gs('goalWeekKm',40);
+  document.querySelectorAll('#weekGoalChips .chip').forEach(c=>{
+    c.classList.toggle('on',parseFloat(c.dataset.val)===gw);
+  });
+
+  // Set manual date default
+  document.getElementById('mDate').value=new Date().toISOString().split('T')[0];
+
+  // Request notification permission
+  if(Notification&&Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+
+  // Load data
+  await refreshDash();
+
+  // Hide splash
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('gone');
+    document.getElementById('app').classList.add('on');
+  },2600);
+});
+
+// Prevent back gesture closing app
+history.pushState(null,'');
+window.addEventListener('popstate',()=>history.pushState(null,''));
+
+// Resize redraws charts
+window.addEventListener('resize',()=>{if(document.getElementById('page-dash').classList.contains('on'))refreshDash();});
+</script>
+</body>
+</html>
